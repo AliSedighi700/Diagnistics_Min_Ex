@@ -1,0 +1,6 @@
+*.tmp
+*.o
+*.a
+a.out
+*.host
+Kokkos*
