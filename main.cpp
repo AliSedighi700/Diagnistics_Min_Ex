@@ -12,7 +12,7 @@ int main(int argc, char* argv []){
 	int N_v = 10 ; // The number of nodes in V-Direction. 
 	double N_x = 5 ; // The number of nodes in X_Direction. 
 	int  dv = 2 ; // The size of the cell in V_Direction. 
-	double dx = 1.256 ; // The size of the cell in X_Direction. 
+	double dx = (2/N_x) * M_PI ; // The size of the cell in X_Direction. 
   const float e = 2.718228183 ; 
 
 	// <---|---|---|--- . . . ---|->V
@@ -40,36 +40,74 @@ int main(int argc, char* argv []){
    
 
 
-		double x = 0.0 ; 
-		int v = -20 ; 
-
-		for(double i = 0 ; i < X_max ; i++) // definition of x_coordinate. 
+		double x_1 = 0 ; 
+		for(double i = 0 ; i < X_max ; i++)  // X-1 definition. 
 		{ 
-			x += dx ;
-			p_1.push_back(x) ;
+			x_1 += dx ;
+			p_1.push_back(x_1) ;
 
-			if(x >= X_max)
+			if(x_1 >= X_max)
 			break ; 
 		}
-		
-    for(double number : p_1 )    // check whether the elements are correct. 
-			std::cout << number << std::endl ;
 
-    
-		v_1.push_back(v) ; 
+		double x_2 = 0 ; 
+  	for(double i = 0 ; i < X_max ; i++) // X-2 definition. 
+		{ 
+			x_2 += dx ;
+			p_2.push_back(x_2) ;
 
-		for(int i = 0  ; i < V_max  ; i++) // Definition of v-coordinate.
-		{
-			v += dv ; 
-			v_1.push_back(v) ; 
+			if(x_2 >= X_max)
+			break ; 
 		}
 
-   for(int number : v_1) // check the v-elements are correct. 
-	   std::cout << number << std::endl ; 
+
+		double x_3 = 0 ; 		
+		for(double i = 0 ; i < X_max ; i++)  // X-3 definition. 
+		{ 
+		  x_3 += dx ;
+			p_3.push_back(x_3) ;
+
+			if(x_3 >= X_max)
+			break ; 
+		}
+	
+
+	  for(double number : p_1)
+			std::cout << number << std::endl ; 
+
+    int V_1 = -20 ; 
+		v_1.push_back(V_1) ; 
+		for(int i = 0  ; i < V_max  ; i++) // Definition of v1-coordinate.
+		{
+			V_1 += dv ; 
+			v_1.push_back(V_1) ; 
+		}
+
+
+    int V_2 = -20 ; 		
+		v_2.push_back(V_2) ; 
+  	for(int i = 0  ; i < V_max  ; i++) // Definition of v2-coordinate.
+		{
+			V_2 += dv ; 
+			v_2.push_back(V_2) ; 
+		}
+
+
+    int V_3 = -20 ; 
+		v_3.push_back(V_3) ; 
+  	for(int i = 0  ; i < V_max  ; i++) // Definition of v3-coordinate.
+		{
+			V_3 += dv ; 
+			v_3.push_back(V_3) ; 
+		}
+
+
+
+
 
    Kokkos::View<double ******> f{} ; //Distribution_Function definition (6D View).
 
-   float M_Dist = ( 1 / sqrt(pow( 1 / (2 * M_PI),   3)) )  * 4 * M_PI * pow(v,2) * pow(e, 1 );
+   float M_Dist = ( 1 / sqrt(pow( 1 / (2 * M_PI),   3)) ) * pow(e, 1 );
 
   }
   Kokkos::finalize();
@@ -77,3 +115,8 @@ int main(int argc, char* argv []){
 	return 0;
 
 }
+
+
+
+
+
