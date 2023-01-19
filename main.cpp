@@ -9,10 +9,9 @@ int main(int argc, char* argv []){
 
 // in order to define the coordinates, we should define the number of nodes in the grid and the size of each cell. 
 
-	int N_v = 10 ; // The number of nodes in V-Direction. 
-	double N_x = 5 ; // The number of nodes in X_Direction. 
-	int  dv = 2 ; // The size of the cell in V_Direction. 
-	double dx = (2/N_x) * M_PI ; // The size of the cell in X_Direction. 
+	size_t N_v = 10 ; // The number of nodes in V-Direction. 
+	size_t  N_x = 5 ; // The number of nodes in X_Direction. 
+	double dx = (2.0/N_x) * M_PI ; // The size of the cell in X_Direction. 
   const float e = 2.718228183 ; 
 
 	// <---|---|---|--- . . . ---|->V
@@ -28,7 +27,7 @@ int main(int argc, char* argv []){
   {
 		int V_max = 20; // maximum value of velocity. 
    	double X_max = 6.28 ; //maximum value of position. 
-
+    int dv = V_max / N_v ; 
 
 		std::vector<int> v_1 ; 
 		std::vector<int> v_2 ; 
@@ -40,15 +39,20 @@ int main(int argc, char* argv []){
    
 
 
-		double x_1 = 0 ; 
+		double x = 0 ; 
 		for(double i = 0 ; i < X_max ; i++)  // X-1 definition. 
 		{ 
-			x_1 += dx ;
-			p_1.push_back(x_1) ;
+			x += dx ;
+			p_1.push_back(x) ;
 
-			if(x_1 >= X_max)
+			if(x >= X_max)
 			break ; 
 		}
+
+
+    for( double number : p_1)
+		  std::cout << number << std::endl ; 
+
 
 		double x_2 = 0 ; 
   	for(double i = 0 ; i < X_max ; i++) // X-2 definition. 
@@ -59,7 +63,7 @@ int main(int argc, char* argv []){
 			if(x_2 >= X_max)
 			break ; 
 		}
-
+    
 
 		double x_3 = 0 ; 		
 		for(double i = 0 ; i < X_max ; i++)  // X-3 definition. 
@@ -70,52 +74,60 @@ int main(int argc, char* argv []){
 			if(x_3 >= X_max)
 			break ; 
 		}
-	
 
-	  for(double number : p_1)
-			std::cout << number << std::endl ; 
 
-    int V_1 = -20 ; 
+
+		int V_1 = -20 ; 
 		v_1.push_back(V_1) ; 
 		for(int i = 0  ; i < V_max  ; i++) // Definition of v1-coordinate.
 		{
-			V_1 += dv ; 
-			v_1.push_back(V_1) ; 
+						V_1 += dv ; 
+						v_1.push_back(V_1) ; 
 		}
 
 
-    int V_2 = -20 ; 		
+		int V_2 = -20 ; 		
 		v_2.push_back(V_2) ; 
-  	for(int i = 0  ; i < V_max  ; i++) // Definition of v2-coordinate.
+		for(int i = 0  ; i < V_max  ; i++) // Definition of v2-coordinate.
 		{
-			V_2 += dv ; 
-			v_2.push_back(V_2) ; 
+						V_2 += dv ; 
+						v_2.push_back(V_2) ; 
 		}
 
 
-    int V_3 = -20 ; 
+		int V_3 = -20 ; 
 		v_3.push_back(V_3) ; 
-  	for(int i = 0  ; i < V_max  ; i++) // Definition of v3-coordinate.
+		for(int i = 0  ; i < V_max  ; i++) // Definition of v3-coordinate.
 		{
-			V_3 += dv ; 
-			v_3.push_back(V_3) ; 
+						V_3 += dv ; 
+						v_3.push_back(V_3) ; 
 		}
 
 
 
 
 
-   Kokkos::View<double ******> f{} ; //Distribution_Function definition (6D View).
+   	Kokkos::View<double ******> f{"Distribution", N_v, N_v, N_v, N_x, N_x, N_x } ; //Distribution_Function definition (6D View).
+    
+    float M_Dist = ( 1 / sqrt(pow( 1 / (2 * M_PI),   3)) );
 
-   float M_Dist = ( 1 / sqrt(pow( 1 / (2 * M_PI),   3)) ) * pow(e, 1 );
 
-  }
+		Kokkos::parallel_for(
+		        "rho",
+						  Kokkos::MDRangePolicy<Kokkos::Rank<6>>(
+							  {0,0,0,0,0,0}, {N_v, N_v, N_v, N_x, N_x, N_x}),
+								  KOKKOS_LAMBDA(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n){
+
+    	f(i,j,k,l,m,n) = M_Dist * pow( e , -0.5 * pow( v_1[i], 2 )) * pow( e , -0.5 * pow( v_2[j] , 2 )) * pow( e, -0.5 * pow( v_3[k] , 2 )) ;
+
+             }); 
+
   Kokkos::finalize();
 
 	return 0;
 
+  }
 }
-
 
 
 
