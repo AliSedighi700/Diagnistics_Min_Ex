@@ -77,8 +77,8 @@ int main(int argc, char* argv []){
 		v_1.push_back(V_1) ; 
 		for(int i = 0  ; i < V_max  ; i++) // Definition of v1-coordinate.
 		{
-						V_1 += dv ; 
-						v_1.push_back(V_1) ; 
+		 	V_1 += dv ; 
+			v_1.push_back(V_1) ; 
 		}
 
 
@@ -86,8 +86,8 @@ int main(int argc, char* argv []){
 		v_2.push_back(V_2) ; 
 		for(int i = 0  ; i < V_max  ; i++) // Definition of v2-coordinate.
 		{
-						V_2 += dv ; 
-						v_2.push_back(V_2) ; 
+			V_2 += dv ; 
+			v_2.push_back(V_2) ; 
 		}
 
 
@@ -95,8 +95,8 @@ int main(int argc, char* argv []){
 		v_3.push_back(V_3) ; 
 		for(int i = 0  ; i < V_max  ; i++) // Definition of v3-coordinate.
 		{
-						V_3 += dv ; 
-						v_3.push_back(V_3) ; 
+			V_3 += dv ; 
+			v_3.push_back(V_3) ; 
 		}
 
 
@@ -128,16 +128,9 @@ int main(int argc, char* argv []){
 							    KOKKOS_LAMBDA(size_t i0, size_t i1, size_t i2){
 					
 					for(size_t i3 = 0 ; i3 < v_1.size() ; i3++)
-            {
 				  	for(size_t i4 = 0 ; i4 < v_2.size() ; i4++)
-              {
 					    for(size_t i5 = 0 ; i5 < v_3.size() ; i5++ )
-                {
 							  Sum(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) ; 
-                }
-							}	
-		  			}				
-
           Sum(i0, i1, i2) *= pow(dv, 3)  ; 
          
 				 });
