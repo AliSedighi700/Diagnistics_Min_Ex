@@ -50,10 +50,6 @@ int main(int argc, char* argv []){
 		}
 
 
-    for( double number : p_1)
-		  std::cout << number << std::endl ; 
-
-
 		double x_2 = 0 ; 
   	for(double i = 0 ; i < X_max ; i++) // X-2 definition. 
 		{ 
@@ -105,13 +101,12 @@ int main(int argc, char* argv []){
 
 
 
-
-
    	Kokkos::View<double ******> f{"Distribution", N_v, N_v, N_v, N_x, N_x, N_x } ; //Distribution_Function definition (6D View).
     
     float M_Dist = ( 1 / sqrt(pow( 1 / (2 * M_PI),   3)) );
 
 
+// feed the 6D View with values if the distribution function .
 		Kokkos::parallel_for(
 		        "rho",
 						  Kokkos::MDRangePolicy<Kokkos::Rank<6>>(
@@ -122,11 +117,36 @@ int main(int argc, char* argv []){
 
              }); 
 
+// Integration. due to race condition, we do the triple integral over velocity space with 3 parallel and 3 serial loop using Kokko parallel_for. 
+
+    Kokkos::View<double ***> Sum {"label", N_x, N_x, N_x} ; 
+
+		Kokkos::parallel_for(
+		        "Sumd3v",
+						  Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
+                {0,0,0},{N_x, N_x, N_x}),
+							    KOKKOS_LAMBDA(size_t i0, size_t i1, size_t i2){
+					
+					for(size_t i3 = 0 ; i3 < v_1.size() ; i3++)
+            {
+				  	for(size_t i4 = 0 ; i4 < v_2.size() ; i4++)
+              {
+					    for(size_t i5 = 0 ; i5 < v_3.size() ; i5++ )
+                {
+							  Sum(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) ; 
+                }
+							}	
+		  			}				
+
+          Sum(i0, i1, i2) *= pow(dv, 3)  ; 
+         
+				 });
+  }
   Kokkos::finalize();
 
-	return 0;
+	return 0; 
 
-  }
+  
 }
 
 
