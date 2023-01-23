@@ -56,7 +56,6 @@ int main(int argc, char* argv []){
 
 
   	std::array< std::vector<double>, 3> V{v_1,v_2,v_3}; 
-    
 
 
    	Kokkos::View<double ******> f{"Distribution", N_x, N_x, N_x, N_v, N_v, N_v} ; //Distribution_Function definition (6D View).
@@ -84,8 +83,17 @@ int main(int argc, char* argv []){
 		std::array< Kokkos::View<double ***>,3> U{Kokkos::View<double ***>{"u1", N_x, N_x, N_x}, 
 																							Kokkos::View<double ***>{"u2", N_x, N_x, N_x},
 																							Kokkos::View<double ***>{"u3", N_x, N_x, N_x}} ; 
-    
 
+   	std::array< Kokkos::View<double ***>,3> stress{Kokkos::View<double ***>{"s1", N_x, N_x, N_x}, 
+																							Kokkos::View<double ***>{"s2", N_x, N_x, N_x},
+																							Kokkos::View<double ***>{"s3", N_x, N_x, N_x}} ; 
+
+
+
+   //for(int i = 0 ; i < U.size() ; i++)
+	 //{
+	   //stress[i] += U[i] * U_1[i] ; 
+	 //}
 
 		Kokkos::parallel_for(
 		        "Sumd3v",
@@ -100,18 +108,31 @@ int main(int argc, char* argv []){
 								Sum_rho(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) ; 
 							  Sum_E(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((v_1[i3] * v_1[i3]) + (v_2[i4] * v_2[i4]) + (v_3[i5] * v_3[i5]))  ;  
                 for(int i = 0 ; i < 3 ; i++)
-								(
+								{
 								  U[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * V[i][i3]  ; //what about i1,i2,i3? we need to iterate over them? 
-	              )
-
+	              }
+                
+								for(int i = 0 ; i < 3 ; i++)
+								{
+								  for(int j = 0; j < 3 ; j++)
+									{
+								    stress[i](i0, i1, i2) = f(i0, i1, i2, i3, i4, i5) * (V[i][i3] * V[j][i3]) ; 
+									}
+								}
 							}
 
 					Sum_rho(i0, i1, i2) *= (dv * dv * dv) ; 			
           Sum_E(i0, i1, i2) *= (dv * dv * dv)  ; 
-					U[0](i0, i1, i2) *= (dv * dv * dv) ; 
-					U[1](i0, i1, i2) *= (dv * dv * dv) ; 
-					U[2](i0, i1, i2) *= (dv * dv * dv) ; 
-					
+
+					for(int i = 0 ; i < 3 ; i++)
+					{
+					  U[i](i0, i1, i2) *= (dv * dv * dv) ; 
+					}
+
+					for(int i = 0 ; i < 3 ; i++)
+					{
+					  stress[i](i0, i1, i2) *= (dv * dv * dv) ; 
+					}
          
 				 });
 
@@ -119,9 +140,16 @@ int main(int argc, char* argv []){
 				 std::cout << " The Energy: " << Sum_E(0,0,0)  << "\n" ; 
 				 for(int i = 0 ; i < 3 ; i++)
          {
-				   std::cout << " The flow:  " << U[i](0,0,0) << "\n" ; 
+				   std::cout << "u " << i << ": "  << U[i](0,0,0) << "\n" ; 
 				 }
-  }
+
+				 for(int i = 0 ; i < 3 ; i++)
+         {
+				   std::cout << "stress Vec " << i << ": "  << stress[i](0,0,0) << "\n" ; 
+				 }
+
+
+   }
   Kokkos::finalize();
 
 	return 0 ; 
