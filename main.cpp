@@ -7,8 +7,8 @@
 
 int main(int argc, char* argv []){
 
-	size_t N_v = 11 ; // The number of nodes in V-Direction. 
-	size_t  N_x = 10 ; // The number of nodes in X_Direction. 
+	size_t N_v = 21 ; // The number of nodes in V-Direction. 
+	size_t  N_x = 3 ; // The number of nodes in X_Direction. 
 	double dx = (2.0/N_x) * M_PI ; // The size of the cell in X_Direction. 
   const float e = 2.71828183 ; 
 
@@ -16,7 +16,7 @@ int main(int argc, char* argv []){
   Kokkos::initialize( argc, argv );
   {
    	double X_max = 6.28 ; //maximum value of position. 
-		double V_max = 4 ; 
+		double V_max = 8 ; 
     double dv = 2*V_max / (N_v - 1) ; 
 
     std::vector<double> v_1 ; 
@@ -61,13 +61,16 @@ int main(int argc, char* argv []){
     
     float M_Dist = ( sqrt(pow( 1 / (2 * M_PI),   3)) );
 
+
+		std::array<double, 3> u_0 = {1.5,2.5,3.5} ;  
+    
     // feed the 6D View with values if the distribution function .
     Kokkos::parallel_for(
 		        "rho",
 						Kokkos::MDRangePolicy<Kokkos::Rank<6>>(
 						  {0,0,0,0,0,0}, {N_x, N_x, N_x, N_v, N_v, N_v}),
 						    KOKKOS_LAMBDA(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n){ 
-								  f(i,j,k,l,m,n) = M_Dist * pow( e , -0.5 * pow( v_1[l], 2 )) * pow( e , -0.5 * pow( v_2[m] , 2 )) * pow( e, -0.5 * pow( v_3[n] , 2 )) ;
+								  f(i,j,k,l,m,n) = M_Dist * pow( e , -0.5 * pow( v_1[l] - u_0[0], 2 )) * pow( e , -0.5 * pow( v_2[m] - u_0[1] , 2 )) * pow( e, -0.5 * pow( v_3[n] - u_0[2] , 2 )) ;
               }); 
 
     // Integration. due to race condition, we do the triple integral over velocity space with 3 parallel and 3 serial loop using Kokko parallel_for. 
@@ -105,21 +108,26 @@ int main(int argc, char* argv []){
 
 							  Sum_E(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((v_1[i3] * v_1[i3]) + (v_2[i4] * v_2[i4]) + (v_3[i5] * v_3[i5]))  ;  //calculating the energy. 
 
+                std::array< size_t , 3>  index{i3, i4, i5} ; 
+///////
                 for(int i = 0 ; i < 3 ; i++)
-								{
-								  U[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * V[i][i3]  ; //what about i1,i2,i3? we need to iterate over them? //calculating the flow.
+////////
+
+								  U[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * V[i][index[i]]  ; //what about i1,i2,i3? we need to iterate over them? //calculating the flow.
 	              }
                 
+
 								for(int i = 0 ; i < 3 ; i++)
 								{
 	    					  for(int j = 0; j < 3 ; j++)
 									{
-						          stress[i][j](i0 ,i1 ,i2) += f(i0, i1, i2, i3, i4, i5) * (V[i][i3] * V[j][i3]) ;
+									  
+						          stress[i][j](i0 ,i1 ,i2) += f(i0, i1, i2, i3, i4, i5) * (V[i][index[i]] * V[j][index[j]]) ;
 								  }
 							 }
               }
 
-
+/////////////
 					Sum_rho(i0, i1, i2) *= (dv * dv * dv) ; 			
           Sum_E(i0, i1, i2) *= (dv * dv * dv)  ; 
 
@@ -133,7 +141,7 @@ int main(int argc, char* argv []){
 						{
 					    stress[i][j](i0,i1,i2) *= (dv * dv * dv) ; 
 					  }
-         
+         /////////////
 				 });
 
 				 std::cout << " The particle number density: " << Sum_rho(0,0,0) <<  "\n" ;  
