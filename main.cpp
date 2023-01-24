@@ -89,8 +89,8 @@ int main(int argc, char* argv []){
 
 
 		std::array< Kokkos::View<double ***>,3> U{Kokkos::View<double ***>{"u1", N_x, N_x, N_x}, // wee need multidimentional array for values of the flow. 
-																							Kokkos::View<double ***>{"u2", N_x, N_x, N_x},
-																							Kokkos::View<double ***>{"u3", N_x, N_x, N_x}} ; 
+		                                          Kokkos::View<double ***>{"u2", N_x, N_x, N_x},
+                                              Kokkos::View<double ***>{"u3", N_x, N_x, N_x}} ; 
 
 
    	std::array< Kokkos::View<double ***>,3> heat{Kokkos::View<double ***>{"h1", N_x, N_x, N_x}, // wee need multidimentional array for values of the heat flux. 
