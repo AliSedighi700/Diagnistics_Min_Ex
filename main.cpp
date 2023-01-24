@@ -114,10 +114,12 @@ int main(int argc, char* argv []){
 								{
 	    					  for(int j = 0; j < 3 ; j++)
 									{
-						          stress[i][j](i0 ,i1 ,i2) = f(i0, i1, i2, i3, i4, i5) * (V[i][i3] * V[j][i3]) ;
+						          stress[i][j](i0 ,i1 ,i2) += f(i0, i1, i2, i3, i4, i5) * (V[i][i3] * V[j][i3]) ;
 								  }
 							 }
               }
+
+
 					Sum_rho(i0, i1, i2) *= (dv * dv * dv) ; 			
           Sum_E(i0, i1, i2) *= (dv * dv * dv)  ; 
 
