@@ -55,8 +55,7 @@ int main(int argc, char* argv []){
 
 
 
-  	std::array< std::vector<double>, 3> V{v_1,v_2,v_3}; 
-
+    std::array< std::vector<double>, 3> V{v_1,v_2,v_3}; 
 
    	Kokkos::View<double ******> f{"Distribution", N_x, N_x, N_x, N_v, N_v, N_v} ; //Distribution_Function definition (6D View).
     
@@ -73,27 +72,24 @@ int main(int argc, char* argv []){
 
     // Integration. due to race condition, we do the triple integral over velocity space with 3 parallel and 3 serial loop using Kokko parallel_for. 
 
-    Kokkos::View<double ***> Sum_E ("Energy", N_x, N_x, N_x) ; 
-		Kokkos::View<double ***> Sum_rho ("rho", N_x, N_x, N_x) ;					
-		Kokkos::View<double ***> Sum_u ("Flow", N_x, N_x, N_x) ; 
+    Kokkos::View<double ***> Sum_E ("Energy", N_x, N_x, N_x) ; // define a view to put energy values in it. 
+		Kokkos::View<double ***> Sum_rho ("rho", N_x, N_x, N_x) ;	// define a view to put particle number density values in it. 				
     
 
 
-	
-		std::array< Kokkos::View<double ***>,3> U{Kokkos::View<double ***>{"u1", N_x, N_x, N_x}, 
+		std::array< Kokkos::View<double ***>,3> U{Kokkos::View<double ***>{"u1", N_x, N_x, N_x}, // wee need multidimentional array for values of the flow. 
 																							Kokkos::View<double ***>{"u2", N_x, N_x, N_x},
 																							Kokkos::View<double ***>{"u3", N_x, N_x, N_x}} ; 
 
-   	std::array< Kokkos::View<double ***>,3> stress{Kokkos::View<double ***>{"s1", N_x, N_x, N_x}, 
-																							Kokkos::View<double ***>{"s2", N_x, N_x, N_x},
-																							Kokkos::View<double ***>{"s3", N_x, N_x, N_x}} ; 
-
-
-
-   //for(int i = 0 ; i < U.size() ; i++)
-	 //{
-	   //stress[i] += U[i] * U_1[i] ; 
-	 //}
+   	std::array<std::array< Kokkos::View<double ***>,3>, 3> stress{Kokkos::View<double ***>{"u11", N_x, N_x, N_x}, // wee need multidimentional array for values of the stress tensor. 
+																							                    Kokkos::View<double ***>{"u12", N_x, N_x, N_x},
+																							                    Kokkos::View<double ***>{"u13", N_x, N_x, N_x},
+																																	Kokkos::View<double ***>{"u21", N_x, N_x, N_x}, // wee need multidimentional array for values of the stress tensor. 
+                                                                  Kokkos::View<double ***>{"u22", N_x, N_x, N_x},
+                                                                  Kokkos::View<double ***>{"u23", N_x, N_x, N_x},
+                                                                  Kokkos::View<double ***>{"u31", N_x, N_x, N_x}, // wee need multidimentional array for values of the stress tensor. 
+                                                                  Kokkos::View<double ***>{"u32", N_x, N_x, N_x},
+                                                                  Kokkos::View<double ***>{"u33", N_x, N_x, N_x}}; 
 
 		Kokkos::parallel_for(
 		        "Sumd3v",
@@ -101,26 +97,27 @@ int main(int argc, char* argv []){
                 {0,0,0},{N_x, N_x, N_x}),
 							    KOKKOS_LAMBDA(size_t i0, size_t i1, size_t i2){
 					
-					for(size_t i3 = 0 ; i3 < v_1.size() ; i3++)
-				  	for(size_t i4 = 0 ; i4 < v_2.size() ; i4++)
-					    for(size_t i5 = 0 ; i5 < v_3.size() ; i5++ )
+					for(size_t i3 = 0 ; i3 < V[1].size() ; i3++) // sum over v1.
+				  	for(size_t i4 = 0 ; i4 < v_2.size() ; i4++)// sum over v2.
+					    for(size_t i5 = 0 ; i5 < v_3.size() ; i5++ )// sum over v3.
 							{
-								Sum_rho(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) ; 
-							  Sum_E(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((v_1[i3] * v_1[i3]) + (v_2[i4] * v_2[i4]) + (v_3[i5] * v_3[i5]))  ;  
+								Sum_rho(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) ; //calculating the number density. 
+
+							  Sum_E(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((v_1[i3] * v_1[i3]) + (v_2[i4] * v_2[i4]) + (v_3[i5] * v_3[i5]))  ;  //calculating the energy. 
+
                 for(int i = 0 ; i < 3 ; i++)
 								{
-								  U[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * V[i][i3]  ; //what about i1,i2,i3? we need to iterate over them? 
+								  U[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * V[i][i3]  ; //what about i1,i2,i3? we need to iterate over them? //calculating the flow.
 	              }
                 
 								for(int i = 0 ; i < 3 ; i++)
 								{
-								  for(int j = 0; j < 3 ; j++)
+	    					  for(int j = 0; j < 3 ; j++)
 									{
-								    stress[i](i0, i1, i2) = f(i0, i1, i2, i3, i4, i5) * (V[i][i3] * V[j][i3]) ; 
-									}
-								}
-							}
-
+						          stress[i][j](i0 ,i1 ,i2) = f(i0, i1, i2, i3, i4, i5) * (V[i][i3] * V[j][i3]) ;
+								  }
+							 }
+              }
 					Sum_rho(i0, i1, i2) *= (dv * dv * dv) ; 			
           Sum_E(i0, i1, i2) *= (dv * dv * dv)  ; 
 
@@ -130,23 +127,27 @@ int main(int argc, char* argv []){
 					}
 
 					for(int i = 0 ; i < 3 ; i++)
-					{
-					  stress[i](i0, i1, i2) *= (dv * dv * dv) ; 
-					}
+					  for(int j = 0 ; j < 3 ; j++)
+						{
+					    stress[i][j](i0,i1,i2) *= (dv * dv * dv) ; 
+					  }
          
 				 });
 
 				 std::cout << " The particle number density: " << Sum_rho(0,0,0) <<  "\n" ;  
 				 std::cout << " The Energy: " << Sum_E(0,0,0)  << "\n" ; 
+
 				 for(int i = 0 ; i < 3 ; i++)
          {
 				   std::cout << "u " << i << ": "  << U[i](0,0,0) << "\n" ; 
 				 }
 
-				 for(int i = 0 ; i < 3 ; i++)
-         {
-				   std::cout << "stress Vec " << i << ": "  << stress[i](0,0,0) << "\n" ; 
-				 }
+				 for(int i = 0 ; i < 3 ; i ++)
+				   for(int j = 0 ; j < 3; j++)
+					  {
+             std::cout << "stress[ " << i+1 <<" ]" << "[ " << j+1 << " ]" << ":" << stress[i][j](0,0,0) << "\n"; 
+						}
+
 
 
    }
