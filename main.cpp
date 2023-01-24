@@ -84,23 +84,23 @@ int main(int argc, char* argv []){
     // Integration. due to race condition, we do the triple integral over velocity space with 3 parallel and 3 serial loop using Kokko parallel_for. 
 
     Kokkos::View<double ***> Sum_E ("Energy", N_x, N_x, N_x) ; // define a view to put energy values in it. 
-		Kokkos::View<double ***> Sum_rho ("rho", N_x, N_x, N_x) ;	// define a view to put particle number density values in it. 				
+    Kokkos::View<double ***> Sum_rho ("rho", N_x, N_x, N_x) ;	// define a view to put particle number density values in it. 				
     
 
 
 		std::array< Kokkos::View<double ***>,3> U{Kokkos::View<double ***>{"u1", N_x, N_x, N_x}, // wee need multidimentional array for values of the flow. 
 		                                          Kokkos::View<double ***>{"u2", N_x, N_x, N_x},
-                                              Kokkos::View<double ***>{"u3", N_x, N_x, N_x}} ; 
+																							Kokkos::View<double ***>{"u3", N_x, N_x, N_x}} ; 
 
 
-   	std::array< Kokkos::View<double ***>,3> heat{Kokkos::View<double ***>{"h1", N_x, N_x, N_x}, // wee need multidimentional array for values of the heat flux. 
-																							Kokkos::View<double ***>{"h2", N_x, N_x, N_x},
-																							Kokkos::View<double ***>{"h3", N_x, N_x, N_x}} ; 
+   	std::array< Kokkos::View<double ***>,3> heat{Kokkos::View<double ***>{"h1", N_x, N_x, N_x}, // wee need multidimentional array for values of the heat flux.
+		                                             Kokkos::View<double ***>{"h2", N_x, N_x, N_x},//  llll lllllllllllll
+																								 Kokkos::View<double ***>{"h3", N_x, N_x, N_x}} ; 
 
    	std::array<std::array< Kokkos::View<double ***>,3>, 3> stress{Kokkos::View<double ***>{"s11", N_x, N_x, N_x}, //we need multidimentional array for stress tensor. 
-																							                    Kokkos::View<double ***>{"s12", N_x, N_x, N_x},
-																							                    Kokkos::View<double ***>{"s13", N_x, N_x, N_x},
-																																	Kokkos::View<double ***>{"s21", N_x, N_x, N_x},  
+		                                                              Kokkos::View<double ***>{"s12", N_x, N_x, N_x},
+                                                                  Kokkos::View<double ***>{"s13", N_x, N_x, N_x},
+                                                                  Kokkos::View<double ***>{"s21", N_x, N_x, N_x},  
                                                                   Kokkos::View<double ***>{"s22", N_x, N_x, N_x},
                                                                   Kokkos::View<double ***>{"s23", N_x, N_x, N_x},
                                                                   Kokkos::View<double ***>{"s31", N_x, N_x, N_x}, 
@@ -114,11 +114,11 @@ int main(int argc, char* argv []){
 							    KOKKOS_LAMBDA(size_t i0, size_t i1, size_t i2){
 					
 					for(size_t i3 = 0 ; i3 < V[1].size() ; i3++) // sum over v1.
-				  	for(size_t i4 = 0 ; i4 < v_2.size() ; i4++)// sum over v2.
-					    for(size_t i5 = 0 ; i5 < v_3.size() ; i5++ )// sum over v3.
-							{
-								Sum_rho(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) ; //calculating the number density. 
- 							  Sum_E(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((v_1[i3] * v_1[i3]) + (v_2[i4] * v_2[i4]) + (v_3[i5] * v_3[i5]))  ;  //calculating the energy. 
+            for(size_t i4 = 0 ; i4 < v_2.size() ; i4++)// sum over v2.
+              for(size_t i5 = 0 ; i5 < v_3.size() ; i5++ )// sum over v3.
+              {
+                Sum_rho(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) ; //calculating the number density. 
+                Sum_E(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((v_1[i3] * v_1[i3]) + (v_2[i4] * v_2[i4]) + (v_3[i5] * v_3[i5]))  ;  //calculating the energy. 
 
                 std::array< size_t , 3>  index{i3, i4, i5} ; 
 
