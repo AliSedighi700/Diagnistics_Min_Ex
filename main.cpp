@@ -1,4 +1,5 @@
 #include <iostream>
+
 #include <vector> 
 #include <Kokkos_Core.hpp>
 #include <cmath> 
@@ -78,7 +79,7 @@ int main(int argc, char* argv []){
 						Kokkos::MDRangePolicy<Kokkos::Rank<6>>(
 						  {0,0,0,0,0,0}, {N_x, N_x, N_x, N_v, N_v, N_v}),
 						    KOKKOS_LAMBDA(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n){ 
-								  f(i,j,k,l,m,n) = M_Dist * exp( -0.5 * pow( v_1[l] - u_0[0], 2 )) * exp( -0.5 * pow( v_2[m] - u_0[1] , 2 )) * exp(-0.5 * pow( v_3[n] - u_0[2] , 2 )) ;
+								  f(i,j,k,l,m,n) = M_Dist * exp( -0.5 * pow( v_1[l] , 2 )) * exp( -0.5 * pow( v_2[m], 2 )) * exp(-0.5 * pow( v_3[n]  , 2 )) ;
               }); 
 
     // Integration. due to race condition, we do the triple integral over velocity space with 3 parallel and 3 serial loop using Kokko parallel_for. 
@@ -94,7 +95,7 @@ int main(int argc, char* argv []){
 
 
    	std::array< Kokkos::View<double ***>,3> heat{Kokkos::View<double ***>{"h1", N_x, N_x, N_x}, // wee need multidimentional array for values of the heat flux.
-		                                             Kokkos::View<double ***>{"h2", N_x, N_x, N_x},//  llll lllllllllllll
+		                                             Kokkos::View<double ***>{"h2", N_x, N_x, N_x},
 																								 Kokkos::View<double ***>{"h3", N_x, N_x, N_x}} ; 
 
    	std::array<std::array< Kokkos::View<double ***>,3>, 3> stress{Kokkos::View<double ***>{"s11", N_x, N_x, N_x}, //we need multidimentional array for stress tensor. 
@@ -132,7 +133,7 @@ int main(int argc, char* argv []){
 							     	  U[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * V[i][index[i]]  ; //what about i1,i2,i3? we need to iterate over them? //calculating the flow.
 	                    U[i](i0, i1, i2) *= (dv * dv * dv) ; 
 
-											heat[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * V[i][index[i]] * ((v_1[i3] * v_1[i3]) + (v_2[i4] * v_2[i4]) + (v_3[i5] * v_3[i5])) ; 
+											heat[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((V[i][index[i]] * v_1[i3]) + (V[i][index[i]] * v_2[i3]) + (V[i][index[i]] * v_3[i3])) ; 
 											heat[i](i0, i1, i3) *= (dv * dv * dv) ; 
 						
 								  }
@@ -172,7 +173,3 @@ int main(int argc, char* argv []){
 
   
 }
-
-
-
-
