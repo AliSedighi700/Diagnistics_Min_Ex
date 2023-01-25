@@ -9,7 +9,7 @@
 int main(int argc, char* argv []){
 
 	size_t N_v = 21 ; // The number of nodes in V-Direction. 
-	size_t  N_x = 3 ; // The number of nodes in X_Direction. 
+	size_t N_x = 3 ; // The number of nodes in X_Direction. 
 	double dx = (2.0/N_x) * M_PI ; // The size of the cell in X_Direction. 
 
 
@@ -19,14 +19,11 @@ int main(int argc, char* argv []){
 		double V_max = 8 ; 
     double dv = 2*V_max / (N_v - 1) ; 
 
-    std::vector<double> v_1 ; 
-		v_1.reserve(N_v) ; // we can tell vector reserve how much data we need, instead of resize it N_v times!!
+    std::vector<double> v_1(N_v); 
 
-    std::vector<double> v_2 ; 
-		v_2.reserve(N_v) ;
+    std::vector<double> v_2(N_v) ; 
 
-    std::vector<double> v_3 ;
-		v_3.reserve(N_v) ;
+    std::vector<double> v_3(N_v) ;
 		
     std::vector<double> p_1 ;
 		p_1.reserve(N_x) ;
@@ -39,29 +36,19 @@ int main(int argc, char* argv []){
 
     
     for(double i = 0 ; i <  N_x ; i++)  // X-1 definition. 
-      p_1.emplace_back(i * dx) ;
-
-
-    for(double i = 0 ; i <  N_x ; i++)  // X-2 definition. 
-      p_2.emplace_back(i * dx) ;
-	 
-      
-    for(double i = 0 ; i < N_x ; i++)  // X-3 definition. 
+		{
+      p_1.emplace_back( i * dv);
+			p_2.emplace_back(i * dv) ;
 			p_3.emplace_back(i * dx) ;
+    }
 
-
-		for(double i = 0  ; i < N_v  ; i++) // Definition of v1-coordinate.
-			v_1.emplace_back(-1 * V_max + i *dv) ;
-
+		for(int i = 0 ; i < N_v; i++)
+		{
+		  v_1[i] = -1 * V_max + i *dv ;
+      v_2[i] = -1 * V_max + i *dv ;
+      v_3[i] = -1 * V_max + i *dv ;
  
-	  
-		for(double i = 0  ; i < N_v  ; i++) // Definition of v2-coordinate.
-			v_2.emplace_back(-1 * V_max + i * dv) ;
-
-
-		for(double i = 0  ; i < N_v  ; i++) // Definition of v3-coordinate.
-			v_3.emplace_back(-1 * V_max + i * dv) ; 
-
+		}
 
 
     std::array< std::vector<double>, 3> V{v_1,v_2,v_3}; 
@@ -71,15 +58,15 @@ int main(int argc, char* argv []){
     float M_Dist = ( sqrt(pow( 1 / (2 * M_PI),   3)) );
 
 
-		std::array<double, 3> u_0 = {1.5,2.5,3.5} ;  
+		std::array<double, 3> u_0 = {0,0,0} ;  
     
-    // feed the 6D View with values if the distribution function .
+    // feed the 6D View with values of the distribution function .
     Kokkos::parallel_for(
 		        "rho",
 						Kokkos::MDRangePolicy<Kokkos::Rank<6>>(
 						  {0,0,0,0,0,0}, {N_x, N_x, N_x, N_v, N_v, N_v}),
 						    KOKKOS_LAMBDA(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n){ 
-								  f(i,j,k,l,m,n) = M_Dist * exp( -0.5 * pow( v_1[l] , 2 )) * exp( -0.5 * pow( v_2[m], 2 )) * exp(-0.5 * pow( v_3[n]  , 2 )) ;
+								  f(i,j,k,l,m,n) = M_Dist * exp( -0.5 * pow( v_1[l] - u_0[0] , 2 )) * exp( -0.5 * pow( v_2[m] - u_0[1], 2 )) * exp(-0.5 * pow( v_3[n] - u_0[2]  , 2 )) ;
               }); 
 
     // Integration. due to race condition, we do the triple integral over velocity space with 3 parallel and 3 serial loop using Kokko parallel_for. 
@@ -114,12 +101,12 @@ int main(int argc, char* argv []){
                 {0,0,0},{N_x, N_x, N_x}),
 							    KOKKOS_LAMBDA(size_t i0, size_t i1, size_t i2){
 					
-					for(size_t i3 = 0 ; i3 < V[1].size() ; i3++) // sum over v1.
+					for(size_t i3 = 0 ; i3 < v_1.size() ; i3++) // sum over v1.
             for(size_t i4 = 0 ; i4 < v_2.size() ; i4++)// sum over v2.
               for(size_t i5 = 0 ; i5 < v_3.size() ; i5++ )// sum over v3.
               {
-                Sum_rho(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) ; //calculating the number density. 
-                Sum_E(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((v_1[i3] * v_1[i3]) + (v_2[i4] * v_2[i4]) + (v_3[i5] * v_3[i5]))  ;  //calculating the energy. 
+                Sum_rho(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * (dv * dv * dv) ; //calculating the number density. 
+                Sum_E(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((v_1[i3] * v_1[i3]) + (v_2[i4] * v_2[i4]) + (v_3[i5] * v_3[i5])) * (dv * dv * dv) ;  //calculating the energy. 
 
                 std::array< size_t , 3>  index{i3, i4, i5} ; 
 
@@ -127,21 +114,15 @@ int main(int argc, char* argv []){
 								{
 	    					  for(int j = 0; j < 3 ; j++)
 									{
-						          stress[i][j](i0 ,i1 ,i2) += f(i0, i1, i2, i3, i4, i5) * (V[i][index[i]] * V[j][index[j]]) ;
-                      stress[i][j](i0,i1,i2) *= (dv * dv * dv) ; 									
-								  
-							     	  U[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * V[i][index[i]]  ; //what about i1,i2,i3? we need to iterate over them? //calculating the flow.
-	                    U[i](i0, i1, i2) *= (dv * dv * dv) ; 
-
-											heat[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((V[i][index[i]] * v_1[i3]) + (V[i][index[i]] * v_2[i3]) + (V[i][index[i]] * v_3[i3])) ; 
-											heat[i](i0, i1, i3) *= (dv * dv * dv) ; 
-						
+						          stress[i][j](i0 ,i1 ,i2) += f(i0, i1, i2, i3, i4, i5) * (V[i][index[i]] * V[j][index[j]]) * (dv * dv * dv) ;
 								  }
+
+                  U[i](i0, i1, i2) += (f(i0, i1, i2, i3, i4, i5) * V[i][index[i]]) * (dv * dv * dv) ; 
+   		            heat[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((V[i][index[i]] * (v_1[i3]*v_1[i3])) + (V[i][index[i]] * (v_2[i3] * v_2[i3])) + ( V[i][index[i]] * (v_3[i3] * v_3[i3]))) * (dv * dv * dv) ; 
+						
 							  }
               }
 
-					Sum_rho(i0, i1, i2) *= (dv * dv * dv) ; 			
-          Sum_E(i0, i1, i2) *= (dv * dv * dv)  ; 
 
 				 });
 
