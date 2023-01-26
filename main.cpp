@@ -8,22 +8,26 @@
 
 int main(int argc, char* argv []){
 
-	size_t N_v = 21 ; // The number of nodes in V-Direction. 
-	size_t N_x = 3 ; // The number of nodes in X_Direction. 
+  std::array<size_t, 3 > N_v = {45,45, 45} ; // The number of nodes in V-Direction. 
+	size_t N_x = 25 ; // The number of nodes in X_Direction. 
 	double dx = (2.0/N_x) * M_PI ; // The size of the cell in X_Direction. 
 
-
+  
   Kokkos::initialize( argc, argv );
   {
    	double X_max = 6.28 ; //maximum value of position. 
 		double V_max = 8 ; 
-    double dv = 2*V_max / (N_v - 1) ; 
 
-    std::vector<double> v_1(N_v); 
+		std::array<double, 3> dv = {} ;
 
-    std::vector<double> v_2(N_v) ; 
+    for(int i = 0 ; i < 3 ; i++)
+		  dv[i] = 2*V_max / (N_v[i] - 1) ;
 
-    std::vector<double> v_3(N_v) ;
+    std::vector<double> v_1(N_v[0]); 
+
+    std::vector<double> v_2(N_v[1]) ; 
+
+    std::vector<double> v_3(N_v[2]) ;
 		
     std::vector<double> p_1 ;
 		p_1.reserve(N_x) ;
@@ -37,36 +41,34 @@ int main(int argc, char* argv []){
     
     for(double i = 0 ; i <  N_x ; i++)  // X-1 definition. 
 		{
-      p_1.emplace_back( i * dv);
-			p_2.emplace_back(i * dv) ;
+      p_1.emplace_back( i * dx);
+			p_2.emplace_back(i * dx) ;
 			p_3.emplace_back(i * dx) ;
     }
 
-		for(int i = 0 ; i < N_v; i++)
-		{
-		  v_1[i] = -1 * V_max + i *dv ;
-      v_2[i] = -1 * V_max + i *dv ;
-      v_3[i] = -1 * V_max + i *dv ;
- 
-		}
-
-
     std::array< std::vector<double>, 3> V{v_1,v_2,v_3}; 
 
-   	Kokkos::View<double ******> f{"Distribution", N_x, N_x, N_x, N_v, N_v, N_v} ; //Distribution_Function definition (6D View).
+    for(int  j = 0 ; j < 3; j++)
+		  for(int i = 0 ; i < N_v[j]; i++)
+		    V[j][i] = -1 * V_max + i * dv[j] ;
+
+
+   	Kokkos::View<double ******> f{"Distribution", N_x, N_x, N_x, N_v[0], N_v[1], N_v[2]} ; //Distribution_Function definition (6D View).
     
     float M_Dist = ( sqrt(pow( 1 / (2 * M_PI),   3)) );
 
-
-		std::array<double, 3> u_0 = {0,0,0} ;  
+		std::array<double, 3> u_0 = {1,2,3} ;  
     
     // feed the 6D View with values of the distribution function .
     Kokkos::parallel_for(
 		        "rho",
 						Kokkos::MDRangePolicy<Kokkos::Rank<6>>(
-						  {0,0,0,0,0,0}, {N_x, N_x, N_x, N_v, N_v, N_v}),
-						    KOKKOS_LAMBDA(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n){ 
-								  f(i,j,k,l,m,n) = M_Dist * exp( -0.5 * pow( v_1[l] - u_0[0] , 2 )) * exp( -0.5 * pow( v_2[m] - u_0[1], 2 )) * exp(-0.5 * pow( v_3[n] - u_0[2]  , 2 )) ;
+						  {0,0,0,0,0,0}, {N_x, N_x, N_x, N_v[0], N_v[1], N_v[2]}),
+						    KOKKOS_LAMBDA(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n){
+								  double vx = V[0][l] - u_0[0] ; 
+								  double vy = V[1][m] - u_0[1] ; 
+								  double vz = V[2][n] - u_0[2] ;
+								  f(i,j,k,l,m,n) = M_Dist * exp( -0.5 * (vx * vx + vy * vy + vz * vz)) ;  
               }); 
 
     // Integration. due to race condition, we do the triple integral over velocity space with 3 parallel and 3 serial loop using Kokko parallel_for. 
@@ -101,25 +103,29 @@ int main(int argc, char* argv []){
                 {0,0,0},{N_x, N_x, N_x}),
 							    KOKKOS_LAMBDA(size_t i0, size_t i1, size_t i2){
 					
-					for(size_t i3 = 0 ; i3 < v_1.size() ; i3++) // sum over v1.
-            for(size_t i4 = 0 ; i4 < v_2.size() ; i4++)// sum over v2.
-              for(size_t i5 = 0 ; i5 < v_3.size() ; i5++ )// sum over v3.
+					for(size_t i3 = 0 ; i3 < V[0].size() ; i3++) // sum over v1.
+            for(size_t i4 = 0 ; i4 < V[1].size() ; i4++)// sum over v2.
+              for(size_t i5 = 0 ; i5 < V[2].size() ; i5++ )// sum over v3.
               {
-                Sum_rho(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * (dv * dv * dv) ; //calculating the number density. 
-                Sum_E(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((v_1[i3] * v_1[i3]) + (v_2[i4] * v_2[i4]) + (v_3[i5] * v_3[i5])) * (dv * dv * dv) ;  //calculating the energy. 
+
+							  double d3v = (dv[0] * dv[1] * dv[2] ) ; 
+								double vsqu = ((V[0][i3] * V[0][i3]) + (V[1][i4] * V[1][i4]) + (V[2][i5] * V[2][i5])) ; 
 
                 std::array< size_t , 3>  index{i3, i4, i5} ; 
 
+                Sum_E(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * vsqu  * d3v ; // calculating the energy. 
+
+                Sum_rho(i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * d3v  ; //calculating the number density. 
+								 
 								for(int i = 0 ; i < 3 ; i++)
 								{
+                  U[i](i0, i1, i2) += (f(i0, i1, i2, i3, i4, i5) * V[i][index[i]]) * d3v; //calculating the flow. 
+
 	    					  for(int j = 0; j < 3 ; j++)
 									{
-						          stress[i][j](i0 ,i1 ,i2) += f(i0, i1, i2, i3, i4, i5) * (V[i][index[i]] * V[j][index[j]]) * (dv * dv * dv) ;
+						        stress[i][j](i0 ,i1 ,i2) += f(i0, i1, i2, i3, i4, i5) * (V[i][index[i]] * V[j][index[j]]) * d3v ; // calculating the stress tensor. 
 								  }
-
-                  U[i](i0, i1, i2) += (f(i0, i1, i2, i3, i4, i5) * V[i][index[i]]) * (dv * dv * dv) ; 
-   		            heat[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * ((V[i][index[i]] * (v_1[i3]*v_1[i3])) + (V[i][index[i]] * (v_2[i3] * v_2[i3])) + ( V[i][index[i]] * (v_3[i3] * v_3[i3]))) * (dv * dv * dv) ; 
-						
+   		              heat[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * V[i][index[i]] * vsqu ;  
 							  }
               }
 
@@ -128,11 +134,6 @@ int main(int argc, char* argv []){
 
 				 std::cout << " The particle number density: " << Sum_rho(0,0,0) <<  "\n" ;  
 				 std::cout << " The Energy: " << Sum_E(0,0,0)  << "\n" ; 
-
-				 for(int i = 0 ; i < 3 ; i++)
-         {
-				   std::cout << "u " << i << ": "  << U[i](0,0,0) << "\n" ; 
-	       }
 
 
 				 for(int i = 0 ; i < 3 ; i ++)
@@ -143,7 +144,12 @@ int main(int argc, char* argv []){
 
 				 for(int i = 0 ; i < 3 ; i++)
          {
-				   std::cout << "heat:  " << i << ": "  << heat[i](0,0,0) << "\n" ; 
+				   std::cout << "heat:  " << i + 1<< ": "  << heat[i](0,0,0) << "\n" ; 
+	       }
+
+				 for(int i = 0 ; i < 3 ; i++)
+         {
+				   std::cout << "flow:  " << i + 1<< ": "  << U[i](0,0,0) << "\n" ; 
 	       }
 
 
