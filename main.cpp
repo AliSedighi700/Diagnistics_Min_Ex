@@ -9,8 +9,7 @@
 int main(int argc, char* argv []){
 
   std::array<size_t, 3 > N_v = {45,45, 45} ; // The number of nodes in V-Direction. 
-	size_t N_x = 25 ; // The number of nodes in X_Direction. 
-	double dx = (2.0/N_x) * M_PI ; // The size of the cell in X_Direction. 
+	std::array<size_t, 3>  N_x = {5, 5, 5} ; // The number of nodes in X_Direction. 
 
   
   Kokkos::initialize( argc, argv );
@@ -19,41 +18,40 @@ int main(int argc, char* argv []){
 		double V_max = 8 ; 
 
 		std::array<double, 3> dv = {} ;
+    std::array<double, 3> dx = {} ; 
 
+		
     for(int i = 0 ; i < 3 ; i++)
+    {
 		  dv[i] = 2*V_max / (N_v[i] - 1) ;
-
+			dx[i] = (2.0/N_x[i]) * M_PI ; 
+    }
     std::vector<double> v_1(N_v[0]); 
 
     std::vector<double> v_2(N_v[1]) ; 
 
     std::vector<double> v_3(N_v[2]) ;
 		
-    std::vector<double> p_1 ;
-		p_1.reserve(N_x) ;
+    std::vector<double> p_1(N_x[0]) ;
 
-   	std::vector<double> p_2 ;
-		p_2.reserve(N_x) ;
+   	std::vector<double> p_2(N_x[1]) ;
 
-    std::vector<double> p_3 ;
-		p_3.reserve(N_x) ;
+    std::vector<double> p_3(N_x[2]) ;
 
-    
-    for(double i = 0 ; i <  N_x ; i++)  // X-1 definition. 
-		{
-      p_1.emplace_back( i * dx);
-			p_2.emplace_back(i * dx) ;
-			p_3.emplace_back(i * dx) ;
-    }
 
-    std::array< std::vector<double>, 3> V{v_1,v_2,v_3}; 
+    std::array< std::vector<double>, 3> V{v_1, v_2, v_3}; 
+		std::array< std::vector<double>, 3> X{p_1, p_2, p_3} ;
 
     for(int  j = 0 ; j < 3; j++)
+		{
 		  for(int i = 0 ; i < N_v[j]; i++)
 		    V[j][i] = -1 * V_max + i * dv[j] ;
+		  
+			for(int i = 0 ; i < N_x[j]; i++)
+			  X[j][i] = i * dx[j] ; 
+    }
 
-
-   	Kokkos::View<double ******> f{"Distribution", N_x, N_x, N_x, N_v[0], N_v[1], N_v[2]} ; //Distribution_Function definition (6D View).
+   	Kokkos::View<double ******> f{"Distribution", N_x[0], N_x[1], N_x[2], N_v[0], N_v[1], N_v[2]} ; //Distribution_Function definition (6D View).
     
     float M_Dist = ( sqrt(pow( 1 / (2 * M_PI),   3)) );
 
@@ -63,7 +61,7 @@ int main(int argc, char* argv []){
     Kokkos::parallel_for(
 		        "rho",
 						Kokkos::MDRangePolicy<Kokkos::Rank<6>>(
-						  {0,0,0,0,0,0}, {N_x, N_x, N_x, N_v[0], N_v[1], N_v[2]}),
+						  {0,0,0,0,0,0}, {N_x[0], N_x[1], N_x[2], N_v[0], N_v[1], N_v[2]}),
 						    KOKKOS_LAMBDA(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n){
 								  double vx = V[0][l] - u_0[0] ; 
 								  double vy = V[1][m] - u_0[1] ; 
@@ -73,34 +71,34 @@ int main(int argc, char* argv []){
 
     // Integration. due to race condition, we do the triple integral over velocity space with 3 parallel and 3 serial loop using Kokko parallel_for. 
 
-    Kokkos::View<double ***> Sum_E ("Energy", N_x, N_x, N_x) ; // define a view to put energy values in it. 
-    Kokkos::View<double ***> Sum_rho ("rho", N_x, N_x, N_x) ;	// define a view to put particle number density values in it. 				
+    Kokkos::View<double ***> Sum_E ("Energy", N_x[0], N_x[1], N_x[2]) ; // define a view to put energy values in it. 
+    Kokkos::View<double ***> Sum_rho ("rho", N_x[0], N_x[1], N_x[2]) ;	// define a view to put particle number density values in it. 				
     
 
 
-		std::array< Kokkos::View<double ***>,3> U{Kokkos::View<double ***>{"u1", N_x, N_x, N_x}, // wee need multidimentional array for values of the flow. 
-		                                          Kokkos::View<double ***>{"u2", N_x, N_x, N_x},
-																							Kokkos::View<double ***>{"u3", N_x, N_x, N_x}} ; 
+		std::array< Kokkos::View<double ***>,3> U{Kokkos::View<double ***>{"u1", N_x[0], N_x[1], N_x[2]}, // wee need multidimentional array for values of the flow. 
+		                                          Kokkos::View<double ***>{"u2", N_x[0], N_x[1], N_x[2]},
+																							Kokkos::View<double ***>{"u3", N_x[0], N_x[1], N_x[2]}} ; 
 
 
-   	std::array< Kokkos::View<double ***>,3> heat{Kokkos::View<double ***>{"h1", N_x, N_x, N_x}, // wee need multidimentional array for values of the heat flux.
-		                                             Kokkos::View<double ***>{"h2", N_x, N_x, N_x},
-																								 Kokkos::View<double ***>{"h3", N_x, N_x, N_x}} ; 
+   	std::array< Kokkos::View<double ***>,3> heat{Kokkos::View<double ***>{"h1", N_x[0], N_x[1], N_x[2]}, // wee need multidimentional array for values of the heat flux.
+		                                             Kokkos::View<double ***>{"h2", N_x[0], N_x[1], N_x[2]},
+																								 Kokkos::View<double ***>{"h3", N_x[0], N_x[1], N_x[2]}} ; 
 
-   	std::array<std::array< Kokkos::View<double ***>,3>, 3> stress{Kokkos::View<double ***>{"s11", N_x, N_x, N_x}, //we need multidimentional array for stress tensor. 
-		                                                              Kokkos::View<double ***>{"s12", N_x, N_x, N_x},
-                                                                  Kokkos::View<double ***>{"s13", N_x, N_x, N_x},
-                                                                  Kokkos::View<double ***>{"s21", N_x, N_x, N_x},  
-                                                                  Kokkos::View<double ***>{"s22", N_x, N_x, N_x},
-                                                                  Kokkos::View<double ***>{"s23", N_x, N_x, N_x},
-                                                                  Kokkos::View<double ***>{"s31", N_x, N_x, N_x}, 
-                                                                  Kokkos::View<double ***>{"s32", N_x, N_x, N_x},
-                                                                  Kokkos::View<double ***>{"s33", N_x, N_x, N_x}}; 
+   	std::array<std::array< Kokkos::View<double ***>,3>, 3> stress{Kokkos::View<double ***>{"s11", N_x[0], N_x[1], N_x[2]}, //we need multidimentional array for stress tensor. 
+		                                                              Kokkos::View<double ***>{"s12", N_x[0], N_x[1], N_x[2]},
+                                                                  Kokkos::View<double ***>{"s13", N_x[0], N_x[1], N_x[2]},
+                                                                  Kokkos::View<double ***>{"s21", N_x[0], N_x[1], N_x[2]},  
+                                                                  Kokkos::View<double ***>{"s22", N_x[0], N_x[1], N_x[2]},
+                                                                  Kokkos::View<double ***>{"s23", N_x[0], N_x[1], N_x[2]},
+                                                                  Kokkos::View<double ***>{"s31", N_x[0], N_x[1], N_x[2]}, 
+                                                                  Kokkos::View<double ***>{"s32", N_x[0], N_x[1], N_x[2]},
+                                                                  Kokkos::View<double ***>{"s33", N_x[0], N_x[1], N_x[2]}}; 
 
 		Kokkos::parallel_for(
 		        "Sumd3v",
 						  Kokkos::MDRangePolicy<Kokkos::Rank<3>>(
-                {0,0,0},{N_x, N_x, N_x}),
+                {0,0,0},{N_x[0], N_x[1], N_x[2]}),
 							    KOKKOS_LAMBDA(size_t i0, size_t i1, size_t i2){
 					
 					for(size_t i3 = 0 ; i3 < V[0].size() ; i3++) // sum over v1.
