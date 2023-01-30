@@ -40,7 +40,7 @@ int main(int argc, char* argv []){
     
     double M_Dist = ( sqrt(pow( 1 / (2 * M_PI),   3)) );
 
-		std::array<double, 3> u_0 = {1,2,3} ;// for shifting the Maxwellian. 
+		std::array<double, 3> u_0 = {2,1,1} ;// for shifting the Maxwellian. 
     
     // feed the 6D View with values of the distribution function. 
     Kokkos::parallel_for(
@@ -123,58 +123,38 @@ int main(int argc, char* argv []){
 				 }
 
 
+				 for(int i = 0 ; i < 3 ; i++)
+				 {
+			     std::cout << "flow:  " << i + 1<< ": "  << U[i](0,0,0) << "\n" ; 
+         }
           
 // In this section we make a test to figure out whther all the results in the configuration space are quivalent to the analytical values. 
          
          int flag = 1 ; 
-				 for(int i = 0 ; i < N_x[0] ; i++)
-				 { 
-				   for(int j = 0 ; j < N_x[1]; j++)
-					 {
-					   for(int k = 0 ; k < N_x[2]; k++)
-						 { 
-						   for(int m  = 0 ; m < 3 ; m++)
-               {
-                  
-						     if(heat[m](i,j,k) != heat[m](0,0,0)); 
-								 {
-								   std::cout << "Error: result != analytical solution" << "\n" ; 
-								   flag = 1 ;
-								   break ; 
-								 }
-					     }	 
-					      if (flag == 1)
-					      break ; 
-  					 }
-					     if (flag == 1)
-					     break ; 
-  				}
-					 if (flag == 1)
-					 break ; 
-         }
-
          
-	
+         for (int i = 0 ; i < N_x[0] ; i++)
+				 {
+				   for(int j = 0 ; j < N_x[1] ; j++)
+					 {
+					   for(int k = 0 ; k < N_x[2] ; k++)
+						 {
+						   if (abs(Sum_rho(i, j , k)-1.) > 1e-10) // cheack for rho
+							 {
+							   std::cout << "Error: result != solution-rho, error"<< (abs(Sum_rho(i,j,k)-1)<1)  << "\n" ; 
+								 flag = 1 ; 
+								 break ; 
+							 }
 
+							 if(flag == 1)
+							   break ; 
+						 }
+						 if(flag==1)
+						   break ; 
+					 }
+					 if(flag==1)
+					   break ; 
+				 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-				 for(int i = 0 ; i < 3 ; i++)
-				   std::cout << "flow:  " << i + 1<< ": "  << U[i](0,0,0) << "\n" ; 
    }
   Kokkos::finalize();
 	return 0 ; 
