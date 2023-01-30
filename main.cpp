@@ -130,7 +130,6 @@ int main(int argc, char* argv []){
           
 // In this section we make a test to figure out whther all the results in the configuration space are quivalent to the analytical values. 
          
-         int flag = 1 ; 
          
          for (int i = 0 ; i < N_x[0] ; i++)
 				 {
@@ -138,22 +137,64 @@ int main(int argc, char* argv []){
 					 {
 					   for(int k = 0 ; k < N_x[2] ; k++)
 						 {
-						   if (abs(Sum_rho(i, j , k)-1.) > 1e-10) // cheack for rho
+						   if (Sum_rho(i, j , k) != 1.0) // cheack for rho
 							 {
-							   std::cout << "Error: result != solution-rho, error"<< (abs(Sum_rho(i,j,k)-1)<1)  << "\n" ; 
-								 flag = 1 ; 
-								 break ; 
+							   std::cout << "Error: result != solution-rho, error"<< Sum_rho(i,j,k) - 1.0 << "\n" ; 
+							 }
+							 if(Sum_E(i,j,k) != (u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]) + 3 ) 
+							 {
+							   std::cout << "Error: result != solution-energy, error"<< Sum_E(i,j,k) - 9. << "\n" ;
 							 }
 
-							 if(flag == 1)
-							   break ; 
+							 for(int m = 0 ; m < 3 ; m ++)
+							 {
+							   if( U[m](i, j, k) != u_0[m])
+								 {
+								   std::cout << "Error: result != solution-flow, error"<< U[m](i, j, k) - u_0[m] << "\n" ;
+								 }
+
+								 if( heat[m](i, j , k) != u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2])) )
+								 {
+								   std::cout << "Error: result != solution-heat, error"<< heat[m](i, j, k) - (u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]))) << "\n" ;
+									 
+								 }
+
+								 for(int n = 0 ; n < 3 ; n++)
+								 { 
+
+								   if( stress[m][n](i,j,k) != (u_0[m] * u_0[m]) + 1)
+									 { 
+									   std::cout << "Error: result != solution-stress, error"<< stress[m][n](i, j, k) - ((u_0[m] * u_0[m]) + 1)<< "\n" ;
+										 break ; 
+									 }
+									 
+								 }
+								 break;
+							 }
+							 break;
 						 }
-						 if(flag==1)
-						   break ; 
+						 break;
 					 }
-					 if(flag==1)
-					   break ; 
+					 break;
 				 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
    }
   Kokkos::finalize();
