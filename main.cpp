@@ -102,7 +102,7 @@ int main(int argc, char* argv []){
    		            heat[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * V[i][index[i]] * v2 * d3v;  //calculating the heat flux. 
 
 		    					for(int j = 0; j < 3 ; j++)
-						        stress[i][j](i0 ,i1 ,i2) += f(i0, i1, i2, i3, i4, i5) * (V[i][index[i]] * V[j][index[j]]) * d3v ; // calculating the stress tensor. 
+						        stress[i][j](i0 ,i1 ,i2) += f(i0, i1, i2, i3, i4, i5) * (V[i][index[j]] * V[j][index[j]]) * d3v ; // calculating the stress tensor. 
 							  }
               }});
 
@@ -139,23 +139,23 @@ int main(int argc, char* argv []){
 						 {
 						   if (Sum_rho(i, j , k) != 1.0) // cheack for rho
 							 {
-							   std::cout << "Error: result != solution-rho, error"<< Sum_rho(i,j,k) - 1.0 << "\n" ; 
+							   std::cout << "Error: result != solution-rho, error = "<< Sum_rho(i,j,k) - 1.0 << "\n" ; 
 							 }
 							 if(Sum_E(i,j,k) != (u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]) + 3 ) 
 							 {
-							   std::cout << "Error: result != solution-energy, error"<< Sum_E(i,j,k) - 9. << "\n" ;
+							   std::cout << "Error: result != solution-energy, error = "<< Sum_E(i,j,k) - 9. << "\n" ;
 							 }
 
 							 for(int m = 0 ; m < 3 ; m ++)
 							 {
 							   if( U[m](i, j, k) != u_0[m])
 								 {
-								   std::cout << "Error: result != solution-flow, error"<< U[m](i, j, k) - u_0[m] << "\n" ;
+								   std::cout << "Error: result != solution-flow, error " <<"[" <<  m <<"]" <<  ": " << U[m](i, j, k) - u_0[m] << "\n" ;
 								 }
 
 								 if( heat[m](i, j , k) != u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2])) )
 								 {
-								   std::cout << "Error: result != solution-heat, error"<< heat[m](i, j, k) - (u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]))) << "\n" ;
+								   std::cout << "Error: result != solution-heat, error " << "[" << m << "]" << heat[m](i, j, k) - (u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]))) << "\n" ;
 									 
 								 }
 
@@ -164,12 +164,10 @@ int main(int argc, char* argv []){
 
 								   if( stress[m][n](i,j,k) != (u_0[m] * u_0[m]) + 1)
 									 { 
-									   std::cout << "Error: result != solution-stress, error"<< stress[m][n](i, j, k) - ((u_0[m] * u_0[m]) + 1)<< "\n" ;
-										 break ; 
+									   std::cout << "Error: result != solution-stress, error " << "[" <<m << n <<"]" <<  "= " << stress[m][n](i, j, k) - ((u_0[n] * u_0[n]) + 1)<< "\n" ;
 									 }
 									 
 								 }
-								 break;
 							 }
 							 break;
 						 }
