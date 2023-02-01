@@ -137,34 +137,33 @@ int main(int argc, char* argv []){
 					 {
 					   for(int k = 0 ; k < N_x[2] ; k++)
 						 {
-						   if (Sum_rho(i, j , k) != 1.0) // cheack for rho
+						    if (abs(Sum_rho(i, j , k)-1.) > 1e-10) // cheack for rho
 							 {
-							   std::cout << "Error: result != solution-rho, error = "<< Sum_rho(i,j,k) - 1.0 << "\n" ; 
+							   std::cout << "Error: result != solution-rho." << "The error: " << Sum_rho(i, j, k) - 1. << "\n" ; 
 							 }
-							 if(Sum_E(i,j,k) != (u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]) + 3 ) 
+							 if (abs((Sum_E(i,j,k) - ((u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]) + 3.) ) > 1e-9))
 							 {
-							   std::cout << "Error: result != solution-energy, error = "<< Sum_E(i,j,k) - 9. << "\n" ;
+							   std::cout << "Error: result != solution-energy." << "The error: " << Sum_E(i,j,k) - 9 << "\n" ;
 							 }
 
 							 for(int m = 0 ; m < 3 ; m ++)
 							 {
-							   if( U[m](i, j, k) != u_0[m])
+							   if( abs(U[m](i, j, k) - u_0[m]) > 1e-9)
 								 {
-								   std::cout << "Error: result != solution-flow, error " <<"[" <<  m <<"]" <<  ": " << U[m](i, j, k) - u_0[m] << "\n" ;
+								   std::cout << "Error: result != solution-flow." << "\n" ;
 								 }
 
-								 if( heat[m](i, j , k) != u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2])) )
+								 if(abs( heat[m](i, j , k) - u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]))) > 1e-7 )
 								 {
-								   std::cout << "Error: result != solution-heat, error " << "[" << m << "]" << heat[m](i, j, k) - (u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]))) << "\n" ;
+								   std::cout << "Error: result != solution-heat."<< "\n" ;
 									 
 								 }
 
-								 for(int  n = 0 ; n < 3 ; n++)
+								 for(int n = 0 ; n < 3 ; n++)
 								 { 
-
-								   if( stress[m][n](i,j,k) != (u_0[n] * u_0[n]) + 1)
+								   if(abs(stress[m][n](i,j,k) - ((u_0[n] * u_0[n]) + 1)) > 1e-08)
 									 { 
-									   std::cout << "Error: result != solution-stress, error " << "[" << m + 1 << n + 1 << "]" <<  "= " << stress[m][n](i, j, k) - ((u_0[n] * u_0[n]) + 1.0) << "\n" ;
+									   std::cout << "Error: result != solution-stress." << "The error: " << stress[m][n](i, j, k) - ((u_0[n] * u_0[n]) + 1) << "\n" ;
 									 }
 									 
 								 }
