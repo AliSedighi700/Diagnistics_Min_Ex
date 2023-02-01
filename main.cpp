@@ -10,8 +10,8 @@ int main(int argc, char* argv []){
   
   Kokkos::initialize( argc, argv );
   {
-   	double X_max = 6.28 ; //maximum value of position. 
-		double V_max = 8 ; 
+   	double X_max = 2. * M_PI ; //maximum value of position. 
+		double V_max = 8. ; 
 
 		std::array<double, 3> dv = {} ;
     std::array<double, 3> dx = {} ; 
@@ -40,7 +40,7 @@ int main(int argc, char* argv []){
     
     double M_Dist = ( sqrt(pow( 1 / (2 * M_PI), 3)) );
 
-		std::array<double, 3> u_0 = {2,1,1} ;// for shifting the Maxwellian. 
+		std::array<double, 3> u_0 = {1., 1., 1.} ;// for shifting the Maxwellian. 
     
     // feed the 6D View with values of the distribution function. 
     Kokkos::parallel_for(
@@ -102,7 +102,7 @@ int main(int argc, char* argv []){
    		            heat[i](i0, i1, i2) += f(i0, i1, i2, i3, i4, i5) * V[i][index[i]] * v2 * d3v;  //calculating the heat flux. 
 
 		    					for(int j = 0; j < 3 ; j++)
-						        stress[i][j](i0 ,i1 ,i2) += f(i0, i1, i2, i3, i4, i5) * (V[i][index[j]] * V[j][index[j]]) * d3v ; // calculating the stress tensor. 
+						        stress[i][j](i0 ,i1 ,i2) += f(i0, i1, i2, i3, i4, i5) * (V[i][index[i]] * V[j][index[j]]) * d3v ; // calculating the stress tensor. 
 							  }
               }});
 
@@ -137,44 +137,48 @@ int main(int argc, char* argv []){
 					 {
 					   for(int k = 0 ; k < N_x[2] ; k++)
 						 {
-						    if (abs(Sum_rho(i, j , k)-1.) > 1e-10) // cheack for rho
-							 {
+						    if (abs(Sum_rho(i, j , k) - 1.) > 1e-10 ) // cheack for rho
 							   std::cout << "Error: result != solution-rho." << "The error: " << Sum_rho(i, j, k) - 1. << "\n" ; 
-							 }
-							 if (abs((Sum_E(i,j,k) - ((u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]) + 3.) ) > 1e-9))
+							 
+
+							 if ((abs(Sum_E(i, j, k) - ((u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]) + 3))) > 1e-11 )  
 							 {
-							   std::cout << "Error: result != solution-energy." << "The error: " << Sum_E(i,j,k) - 9 << "\n" ;
+							   std::cout << "Error: result != solution-energy." << "The error: " << Sum_E(i, j, k) - ((u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]) + 3) << "\n" ;
 							 }
 
-							 for(int m = 0 ; m < 3 ; m ++)
+					 for(int m = 0 ; m < 3 ; m ++)
 							 {
-							   if( abs(U[m](i, j, k) - u_0[m]) > 1e-9)
+							   if(abs(U[m](i, j, k) -  u_0[m]) > 1e-12)
 								 {
-								   std::cout << "Error: result != solution-flow." << "\n" ;
+								   std::cout << "Error: result != solution-flow." << "The error: " << U[m](i, j, k) - u_0[m]<< "\n" ;
 								 }
-
-								 if(abs( heat[m](i, j , k) - u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]))) > 1e-7 )
+                   
+								 if(abs(heat[m](i, j , k) -  u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]))) > 1e-10)
 								 {
-								   std::cout << "Error: result != solution-heat."<< "\n" ;
-									 
+								   std::cout << "Error: result != solution-heat." << "The error: " << heat[m](i, j , k) - u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2])) << "\n" ;
+                   									 
 								 }
 
 								 for(int n = 0 ; n < 3 ; n++)
 								 { 
-								   if(abs(stress[m][n](i,j,k) - ((u_0[n] * u_0[n]) + 1)) > 1e-08)
+								   double u = u_0[m] * u_0[n] ; 
+									 if( n == m )
+									  u ++ ; 
+
+								   if(abs(stress[m][n](i,j,k) - u ) > 1e-11 )
 									 { 
-									   std::cout << "Error: result != solution-stress." << "The error: " << stress[m][n](i, j, k) - ((u_0[n] * u_0[n]) + 1) << "\n" ;
+									   std::cout << "Error: result != solution-stress." << "The error: " << stress[m][n](i, j, k) - u   << "\n" ;
 									 }
 									 
 								 }
-							 }
+  						 }
 							 break;
 						 }
 						 break;
 					 }
 					 break;
 				 }
-   }
+     }
   Kokkos::finalize();
 	return 0 ; 
 }
