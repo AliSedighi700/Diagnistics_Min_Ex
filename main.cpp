@@ -6,7 +6,7 @@
 int main(int argc, char* argv []){
 
   std::array<size_t, 3 > N_v = {21, 21, 21} ; // The number of nodes in V-Direction. 
-	std::array<size_t, 3>  N_x = {3,3,3} ; // The number of nodes in X_Direction. 
+	std::array<size_t, 3>  N_x = {3 , 3 , 3} ; // The number of nodes in X_Direction. 
   
   Kokkos::initialize( argc, argv );
   {
@@ -25,7 +25,7 @@ int main(int argc, char* argv []){
     std::array< std::vector<double>, 3> V{}; 
 		std::array< std::vector<double>, 3> X{};
 
-    for(int  j = 0 ; j < 3; j++)
+    for(int j = 0 ; j < 3; j++)
 		{
 			V[j] = std::vector<double>(N_v[j]);
 		  for(int i = 0 ; i < N_v[j]; i++)
@@ -38,7 +38,7 @@ int main(int argc, char* argv []){
 
    	Kokkos::View<double ******> f{"Distribution", N_x[0], N_x[1], N_x[2], N_v[0], N_v[1], N_v[2]} ; //Distribution_Function definition (6D View).
     
-    double M_Dist = ( sqrt(pow( 1 / (2 * M_PI),   3)) );
+    double M_Dist = ( sqrt(pow( 1 / (2 * M_PI), 3)) );
 
 		std::array<double, 3> u_0 = {2,1,1} ;// for shifting the Maxwellian. 
     
@@ -63,7 +63,7 @@ int main(int argc, char* argv []){
    	std::array<std::array< Kokkos::View<double ***>,3>, 3> stress{}; // stress tensor = rmpty view to feed. 
 
 
-		for(size_t i=0; i < 3 ; i++)
+		for(size_t i = 0 ; i < 3 ; i++)
 		{
 			std::string label{"u"+std::to_string(i)};//Vector component labels. 
 			U[i] = Kokkos::View<double ***>{label , N_x[0], N_x[1], N_x[2]} ;// feeding the flow View. 
@@ -71,8 +71,8 @@ int main(int argc, char* argv []){
 			label = std::string{"heat"+std::to_string(i)};//Vector component labels. 
 			heat[i] =Kokkos::View<double ***>{label, N_x[0], N_x[1], N_x[2]} ;//feeding the heat flux View. 
 
-			for(size_t j=0; j < 3; j++)
-			{
+			for(size_t j = 0 ; j < 3; j++)
+			{ 
 				label = std::string{"heat"+std::to_string(i) + std::to_string(j)}; // Tensor component labels. 
 				stress[i][j] = Kokkos::View<double ***>{label, N_x[0], N_x[1], N_x[2]}; // feeding the stress tensor View. 
 			}	
@@ -85,7 +85,7 @@ int main(int argc, char* argv []){
 							    KOKKOS_LAMBDA(size_t i0, size_t i1, size_t i2){
 					
 					for(size_t i3 = 0 ; i3 < V[0].size() ; i3++) // sum over v1.
-            for(size_t i4 = 0 ; i4 < V[1].size() ; i4++)// sum over v2.
+            for(size_t i4 = 0 ; i4 < V[1].size(); i4++)// sum over v2.
               for(size_t i5 = 0 ; i5 < V[2].size() ; i5++ )// sum over v3.
               {
 							  double d3v = (dv[0] * dv[1] * dv[2] ) ; 
@@ -106,7 +106,7 @@ int main(int argc, char* argv []){
 							  }
               }});
 
-				 std::cout << " The particle number density: " << Sum_rho(0,0,0) <<  "\n" ;  
+         std::cout << " The particle number density: " << Sum_rho(0,0,0) <<  "\n" ;  
 				 std::cout << " The Energy: " << Sum_E(0,0,0)  << "\n" ; 
 
 				 for(int i = 0 ; i < 3 ; i ++)
@@ -159,12 +159,12 @@ int main(int argc, char* argv []){
 									 
 								 }
 
-								 for(int n = 0 ; n < 3 ; n++)
+								 for(int  n = 0 ; n < 3 ; n++)
 								 { 
 
-								   if( stress[m][n](i,j,k) != (u_0[m] * u_0[m]) + 1)
+								   if( stress[m][n](i,j,k) != (u_0[n] * u_0[n]) + 1)
 									 { 
-									   std::cout << "Error: result != solution-stress, error " << "[" <<m << n <<"]" <<  "= " << stress[m][n](i, j, k) - ((u_0[n] * u_0[n]) + 1)<< "\n" ;
+									   std::cout << "Error: result != solution-stress, error " << "[" << m + 1 << n + 1 << "]" <<  "= " << stress[m][n](i, j, k) - ((u_0[n] * u_0[n]) + 1.0) << "\n" ;
 									 }
 									 
 								 }
@@ -175,25 +175,6 @@ int main(int argc, char* argv []){
 					 }
 					 break;
 				 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
    }
   Kokkos::finalize();
 	return 0 ; 
