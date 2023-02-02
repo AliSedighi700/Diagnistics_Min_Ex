@@ -5,8 +5,8 @@
 
 int main(int argc, char* argv []){
 
-  std::array<size_t, 3 > N_v = {21, 21, 21} ; // The number of nodes in V-Direction. 
-	std::array<size_t, 3>  N_x = {3 , 3 , 3} ; // The number of nodes in X_Direction. 
+  std::array<size_t, 3 > N_v = {21, 21, 21} ; // The number of nodes in V-Direction.
+  std::array<size_t, 3>  N_x = {3 , 3 , 3} ; // The number of nodes in X_Direction. 
   
   Kokkos::initialize( argc, argv );
   {
