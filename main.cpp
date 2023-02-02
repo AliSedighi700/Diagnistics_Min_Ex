@@ -11,36 +11,36 @@ int main(int argc, char* argv []){
   Kokkos::initialize( argc, argv );
   {
    	double X_max = 2. * M_PI ; //maximum value of position. 
-		double V_max = 8. ; 
+    double V_max = 8. ; 
 
-		std::array<double, 3> dv = {} ;
+    std::array<double, 3> dv = {} ;
     std::array<double, 3> dx = {} ; 
 		
     for(int i = 0 ; i < 3 ; i++)
     {
-		  dv[i] = 2*V_max / (N_v[i] - 1) ; //velocity space valume element.
-			dx[i] = (2.0/N_x[i]) * M_PI ; //position space valume element. 
+      dv[i] = 2*V_max / (N_v[i] - 1) ; //velocity space valume element.
+      dx[i] = (2.0/N_x[i]) * M_PI ; //position space valume element. 
     }
 
     std::array< std::vector<double>, 3> V{}; 
-		std::array< std::vector<double>, 3> X{};
+    std::array< std::vector<double>, 3> X{};
 
     for(int j = 0 ; j < 3; j++)
-		{
-			V[j] = std::vector<double>(N_v[j]);
-		  for(int i = 0 ; i < N_v[j]; i++)
-		    V[j][i] = -1 * V_max + i * dv[j] ;
+    {
+      V[j] = std::vector<double>(N_v[j]);
+      for(int i = 0 ; i < N_v[j]; i++)
+        V[j][i] = -1 * V_max + i * dv[j] ;
 		  
-			X[j] = std::vector<double>(N_x[j]);
-			for(int i = 0 ; i < N_x[j]; i++)
-			  X[j][i] = i * dx[j] ; 
+      X[j] = std::vector<double>(N_x[j]);
+      for(int i = 0 ; i < N_x[j]; i++)
+        X[j][i] = i * dx[j] ; 
     }
 
-   	Kokkos::View<double ******> f{"Distribution", N_x[0], N_x[1], N_x[2], N_v[0], N_v[1], N_v[2]} ; //Distribution_Function definition (6D View).
+    Kokkos::View<double ******> f{"Distribution", N_x[0], N_x[1], N_x[2], N_v[0], N_v[1], N_v[2]} ; //Distribution_Function definition (6D View).
     
     double M_Dist = ( sqrt(pow( 1 / (2 * M_PI), 3)) );
 
-		std::array<double, 3> u_0 = {1., 1., 1.} ;// for shifting the Maxwellian. 
+    std::array<double, 3> u_0 = {1., 1., 1.} ;// for shifting the Maxwellian. 
     
     // feed the 6D View with values of the distribution function. 
     Kokkos::parallel_for(
