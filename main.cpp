@@ -61,13 +61,13 @@ int main(int argc, char* argv []){
 
     for(size_t i = 0 ; i < 3 ; i++)
     {
-			std::string label{"u"+std::to_string(i)};//Vector component labels. 
-			U[i] = Kokkos::View<double ***>{label , N_x[0], N_x[1], N_x[2]} ;// feeding the flow View. 
+      std::string label{"u"+std::to_string(i)};//Vector component labels. 
+      U[i] = Kokkos::View<double ***>{label , N_x[0], N_x[1], N_x[2]} ;// feeding the flow View. 
 
-			label = std::string{"heat"+std::to_string(i)};//Vector component labels. 
-			heat[i] =Kokkos::View<double ***>{label, N_x[0], N_x[1], N_x[2]} ;//feeding the heat flux View. 
+      label = std::string{"heat"+std::to_string(i)};//Vector component labels. 
+      heat[i] =Kokkos::View<double ***>{label, N_x[0], N_x[1], N_x[2]} ;//feeding the heat flux View. 
 
-      for(size_t j = 0 ; j < 3; j++)
+      for(size_t j = 0 ; j < 3; j++) 
       {
         label = std::string{"heat"+std::to_string(i) + std::to_string(j)}; // Tensor component labels. 
         stress[i][j] = Kokkos::View<double ***>{label, N_x[0], N_x[1], N_x[2]}; // feeding the stress tensor View. 
@@ -117,54 +117,43 @@ int main(int argc, char* argv []){
 // In this section we make a test to figure out whther all the results in the configuration space are quivalent to the analytical values. 
          
          
-         for (int i = 0 ; i < N_x[0] ; i++)
-				 {
-				   for(int j = 0 ; j < N_x[1] ; j++)
-					 {
-					   for(int k = 0 ; k < N_x[2] ; k++)
-						 {
-						    if (abs(Sum_rho(i, j , k) - 1.) > 1e-10 ) // cheack for rho
-							   std::cout << "Error: result != solution-rho." << "The error: " << Sum_rho(i, j, k) - 1. << "\n" ; 
-							 
+    for (int i = 0 ; i < N_x[0] ; i++)
+    {
+      for(int j = 0 ; j < N_x[1] ; j++)
+      {
+        for(int k = 0 ; k < N_x[2] ; k++)
+        {
+          if(abs(Sum_rho(i, j , k) - 1.) > 1e-10 ) // cheack for rho
+            std::cout << "Error: result != solution-rho." << "The error: " << Sum_rho(i, j, k) - 1. << "\n" ; 
 
-							 if ((abs(Sum_E(i, j, k) - ((u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]) + 3))) > 1e-11 )  
-							 {
-							   std::cout << "Error: result != solution-energy." << "The error: " << Sum_E(i, j, k) - ((u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]) + 3) << "\n" ;
-							 }
+          if((abs(Sum_E(i, j, k) - ((u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]) + 3))) > 1e-11 )  
+            std::cout << "Error: result != solution-energy." << "The error: " << Sum_E(i, j, k) - ((u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]) + 3) << "\n" ;
+          
+          for(int m = 0 ; m < 3 ; m ++)
+          {
+            if(abs(U[m](i, j, k) -  u_0[m]) > 1e-12)
+              std::cout << "Error: result != solution-flow." << "The error: " << U[m](i, j, k) - u_0[m]<< "\n" ;
+          
+            if(abs(heat[m](i, j , k) -  u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]))) > 1e-10)
+              std::cout << "Error: result != solution-heat." << "The error: " << heat[m](i, j , k) - u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2])) << "\n" ;
 
-					 for(int m = 0 ; m < 3 ; m ++)
-							 {
-							   if(abs(U[m](i, j, k) -  u_0[m]) > 1e-12)
-								 {
-								   std::cout << "Error: result != solution-flow." << "The error: " << U[m](i, j, k) - u_0[m]<< "\n" ;
-								 }
-                   
-								 if(abs(heat[m](i, j , k) -  u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2]))) > 1e-10)
-								 {
-								   std::cout << "Error: result != solution-heat." << "The error: " << heat[m](i, j , k) - u_0[m] * (2 + 3 +(u_0[0]*u_0[0] + u_0[1]*u_0[1] + u_0[2]*u_0[2])) << "\n" ;
-                   									 
-								 }
+            for(int n = 0 ; n < 3 ; n++)
+            { 
+              double u = u_0[m] * u_0[n] ; 
+              if( n == m )
+                u ++ ; 
 
-								 for(int n = 0 ; n < 3 ; n++)
-								 { 
-								   double u = u_0[m] * u_0[n] ; 
-									 if( n == m )
-									  u ++ ; 
-
-								   if(abs(stress[m][n](i,j,k) - u ) > 1e-11 )
-									 { 
-									   std::cout << "Error: result != solution-stress." << "The error: " << stress[m][n](i, j, k) - u   << "\n" ;
-									 }
-									 
-								 }
-  						 }
-							 break;
-						 }
-						 break;
-					 }
-					 break;
-				 }
-     }
+              if(abs(stress[m][n](i,j,k) - u ) > 1e-11 ) 
+                std::cout << "Error: result != solution-stress." << "The error: " << stress[m][n](i, j, k) - u   << "\n" ;								 
+            }
+          }
+          break;
+        }
+        break;
+      }
+      break;
+    }
+  }
   Kokkos::finalize();
-	return 0 ; 
+  return 0 ; 
 }
