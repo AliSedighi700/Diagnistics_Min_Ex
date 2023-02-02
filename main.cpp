@@ -25,20 +25,20 @@ int main(int argc, char* argv []){
     std::array< std::vector<double>, 3> V{}; 
     std::array< std::vector<double>, 3> X{};
 
-    for(int j = 0 ; j < 3; j++)
+    for(int j = 0 ; j < 3; j++) // Defining the velocity and space coordinates.
     {
       V[j] = std::vector<double>(N_v[j]);
-      for(int i = 0 ; i < N_v[j]; i++)
+      for(int i = 0 ; i < N_v[j]; i++)    //Velocities
         V[j][i] = -1 * V_max + i * dv[j] ;
 		  
       X[j] = std::vector<double>(N_x[j]);
-      for(int i = 0 ; i < N_x[j]; i++)
+      for(int i = 0 ; i < N_x[j]; i++)   //Space
         X[j][i] = i * dx[j] ; 
     }
 
     Kokkos::View<double ******> f{"Distribution", N_x[0], N_x[1], N_x[2], N_v[0], N_v[1], N_v[2]} ; //Distribution_Function definition (6D View).
     
-    double M_Dist = ( sqrt(pow( 1 / (2 * M_PI), 3)) );
+    double M_Dist = ( sqrt(pow( 1 / (2 * M_PI), 3)) ); // Normalizatin factor of The maxwellian distribuation function. 
 
     std::array<double, 3> u_0 = {1., 1., 1.} ;// for shifting the Maxwellian. 
     
@@ -74,10 +74,10 @@ int main(int argc, char* argv []){
       }	
     }		
 
-    Kokkos::parallel_for( "Sumd3v",Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{N_x[0], N_x[1], N_x[2]}),KOKKOS_LAMBDA(size_t i0, size_t i1, size_t i2){
-         for(size_t i3 = 0 ; i3 < V[0].size() ; i3++) // sum over v1.
-           for(size_t i4 = 0 ; i4 < V[1].size(); i4++)// sum over v2.
-             for(size_t i5 = 0 ; i5 < V[2].size() ; i5++ )// sum over v3.
+    Kokkos::parallel_for( "Sumd3v",Kokkos::MDRangePolicy<Kokkos::Rank<3>>({0,0,0},{N_x[0], N_x[1], N_x[2]}),KOKKOS_LAMBDA(size_t i0, size_t i1, size_t i2){ // Here we are calculating the diagnostics in a parallel way.
+         for(size_t i3 = 0 ; i3 < V[0].size() ; i3++) // sum over v1.                                                                                       // However, due to the race condition inthe Reiman integral 
+           for(size_t i4 = 0 ; i4 < V[1].size(); i4++)// sum over v2.                                                                                       // We have to have 3 parallel loop and 3 serial loops.
+             for(size_t i5 = 0 ; i5 < V[2].size() ; i5++ )// sum over v3.                                            
                {
                 double d3v = (dv[0] * dv[1] * dv[2] ) ; 
                 double v2 = ((V[0][i3] * V[0][i3]) + (V[1][i4] * V[1][i4]) + (V[2][i5] * V[2][i5])) ; 
