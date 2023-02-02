@@ -1,4 +1,4 @@
 # Diagnistics_Min_Ex
-Minimal
+A minimal example of six dimensional diagnostics for plasma turbulence simulation.
 
 
